@@ -5,19 +5,21 @@ public class Generator {
 
 	public static final double CONSTRAINT_PERCENTAGE = 0.3;
 	public static final double FACT_PERCENTAGE = 0.3;
+
 	public static final double PREDICATE_TO_SIZE_RATIO = 0.1;
 	public static final double VARIABLE_TO_SIZE_RATIO = 0.1;
 	public static final double CONSTANT_TO_SIZE_RATIO = 0.1;
 	public static final double FUNCTOR_TO_SIZE_RATIO = 0.05;
+
 	public static final int MAX_PREDICATE_ARITY = 3;
 	public static final boolean INCLUDE_FUNCTIONS = true;
 
-	private int size;
-	private Random rand;
-	private List<Predicate> predicates = new LinkedList<>();
-	private List<Variable> variables = new LinkedList<>();
-	private List<Constant> constants = new LinkedList<>();
-	private List<Functor> functors = new LinkedList<>();
+	private final int size;
+	private final Random rand;
+	private final List<Predicate> predicates = new LinkedList<>();
+	private final List<Variable> variables = new LinkedList<>();
+	private final List<Constant> constants = new LinkedList<>();
+	private final List<Functor> functors = new LinkedList<>();
 
 	public Generator(int size, Random rand) {
 		this.size = size;
@@ -59,13 +61,13 @@ public class Generator {
 		}
 	}
 
-	public AspRule generateRule() {
+	private AspRule generateRule() {
 		Atom head = generateAtom();
 		Body body = generateBody(head);
 		return new AspRule(head,body, AspRule.RuleType.RULE);
 	}
 
-	public AspRule generateFact() {
+	private AspRule generateFact() {
 
 		Atom head = generateAtom();
 		while (head.getOccurringVariables().size() > 0) {
@@ -74,12 +76,12 @@ public class Generator {
 		return new AspRule(head,null, AspRule.RuleType.FACT);
 	}
 
-	public AspRule generateConstraint() {
+	private AspRule generateConstraint() {
 		Body body = generateBody(null);
 		return new AspRule(null, body, AspRule.RuleType.CONSTRAINT);
 	}
 
-	public Atom generateAtom() {
+	private Atom generateAtom() {
 		Predicate predicate = predicates.get(rand.nextInt(predicates.size()));
 
 		List<Term> terms = new LinkedList<>();
@@ -90,7 +92,8 @@ public class Generator {
 		return new Atom(predicate,terms);
 	}
 
-	public Atom generateAtom(List<Variable> neededVariables) {
+	/*
+	private Atom generateAtom(List<Variable> neededVariables) {
 		Predicate predicate = predicates.get(rand.nextInt(predicates.size()));
 
 		while (predicate.getArity() < neededVariables.size()) {
@@ -108,47 +111,48 @@ public class Generator {
 		}
 
 		return new Atom(predicate,terms);
-	}
+	} */
 
 	private Body generateBody(Atom head) {
 		List<Atom> negBody = new LinkedList<>();
-		Set<Variable> occurringVariables;
+		Set<Variable> neededVariables;
 		if (head == null) {
-			occurringVariables = new LinkedHashSet<>();
+			neededVariables = new LinkedHashSet<>();
 		}
 		else {
-			occurringVariables = new LinkedHashSet<>(head.getOccurringVariables());
+			neededVariables = new LinkedHashSet<>(head.getOccurringVariables());
 		}
 		Atom bodyAtom;
+
 		int negBodyLength = rand.nextInt(3);
 		for(int i = 0; i < negBodyLength; i++) {
 			bodyAtom = generateAtom();
 			negBody.add(bodyAtom);
-			occurringVariables.addAll(bodyAtom.getOccurringVariables());
+			neededVariables.addAll(bodyAtom.getOccurringVariables());
 		}
 
-		List<Variable> variableList = new LinkedList<>(occurringVariables);
-		List<Variable> neededVariables;
-		List<Atom> posBody = new LinkedList<>();
-		int posBodyLength = rand.nextInt(4);
-		for(int i = 0; i < posBodyLength + 1|| i < negBodyLength; i++) {
+		List<Atom> posBody;
+		do {
+			posBody = new LinkedList<>();
+			int posBodyLength = rand.nextInt(4) + 1;
+			for(int i = 0; i < posBodyLength; i++) {
+				bodyAtom = generateAtom();
+				posBody.add(bodyAtom);
+			}
+		} while (isUnsafe(neededVariables,posBody));
 
-			if (variableList.size() > 0) {
-				neededVariables = List.copyOf(variableList.subList(0, Math.min(3, variableList.size())));
-				int varCount = neededVariables.size();
-				posBody.add(generateAtom(neededVariables));
-				for (int j = 0; j < varCount; j++) {
-					variableList.remove(neededVariables.get(j));
-				}
-			}
-			else {
-				posBody.add(generateAtom());
-			}
-		}
 		return new Body(posBody, negBody);
 	}
 
-	public Term generateTerm() {
+	private boolean isUnsafe(Set<Variable> neededVariables, List<Atom> posBody) {
+		Set<Variable> occurringVariables = new LinkedHashSet<>();
+		for (Atom atom: posBody) {
+			occurringVariables.addAll(atom.getOccurringVariables());
+		}
+		return (!occurringVariables.containsAll(neededVariables));
+	}
+
+	private Term generateTerm() {
 		switch (rand.nextInt(2 + (INCLUDE_FUNCTIONS ? 1 : 0))) {
 			case 0:
 				return new Term(variables.get(rand.nextInt(variables.size())));
