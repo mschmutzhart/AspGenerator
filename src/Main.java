@@ -17,17 +17,17 @@ public class Main {
 		}
 
 		Random rand;
-		int seed = (int) (1000 * Math.random()) + size;
+		int seed = (int) (1000 * Math.random());
 		if (args.length > 1) {
 			try {
-				seed = Integer.parseInt(args[1]);
+				seed = Integer.parseInt(args[1]) ;
 			}
 			catch (NumberFormatException e) {
 				System.err.println("Argument" + args[1] + " must be an integer.");
 				System.exit(1);
 			}
 		}
-		rand = new Random(seed);
+		rand = new Random(seed + size);
 
 
 		System.out.println("% Size: " + size + ", Seed: " + seed);

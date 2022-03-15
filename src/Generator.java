@@ -42,7 +42,7 @@ public class Generator {
 			else {
 				rule = generateRule();
 			}
-			System.out.println(rule.toString());
+			System.out.println(rule);
 		}
 	}
 
@@ -68,12 +68,13 @@ public class Generator {
 	}
 
 	private AspRule generateFact() {
+		Predicate predicate = predicates.get(rand.nextInt(predicates.size()));
 
-		Atom head = generateAtom();
-		while (head.getOccurringVariables().size() > 0) {
-			head = generateAtom();
+		List<Term> terms = new LinkedList<>();
+		for (int i = 0; i < predicate.getArity(); i++) {
+			terms.add(generateConstantTerm());
 		}
-		return new AspRule(head,null, AspRule.RuleType.FACT);
+		return new AspRule(new Atom(predicate,terms),null, AspRule.RuleType.FACT);
 	}
 
 	private AspRule generateConstraint() {
@@ -171,14 +172,21 @@ public class Generator {
 		return null;
 	}
 
+	public Term generateConstantTerm() {
+		return switch (rand.nextInt(1 + (INCLUDE_FUNCTIONS ? 1 : 0))) {
+			case 0 -> new Term(constants.get(rand.nextInt(constants.size())));
+			case 1 -> new Term(functors.get(rand.nextInt(functors.size())),
+					constants.get(rand.nextInt(constants.size())));
+			default -> null;
+		};
+	}
+
 	public Term generateTerm(Variable neededVariable) {
-		switch (rand.nextInt(1 + (INCLUDE_FUNCTIONS ? 1 : 0))) {
-			case 0:
-				return new Term(neededVariable);
-			case 1:
-				return new Term(functors.get(rand.nextInt(functors.size())),
-						neededVariable);
-		}
-		return null;
+		return switch (rand.nextInt(1 + (INCLUDE_FUNCTIONS ? 1 : 0))) {
+			case 0 -> new Term(neededVariable);
+			case 1 -> new Term(functors.get(rand.nextInt(functors.size())),
+					neededVariable);
+			default -> null;
+		};
 	}
 }
