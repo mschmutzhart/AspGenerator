@@ -16,18 +16,22 @@ public class Main {
 			System.exit(1);
 		}
 
-		int seed;
-		Random rand = new Random();
+		Random rand;
+		int seed = (int) (1000 * Math.random()) + size;
 		if (args.length > 1) {
 			try {
 				seed = Integer.parseInt(args[1]);
-				rand = new Random(seed);
 			}
 			catch (NumberFormatException e) {
 				System.err.println("Argument" + args[1] + " must be an integer.");
 				System.exit(1);
 			}
 		}
+		rand = new Random(seed);
+
+
+		System.out.println("% Size: " + size + ", Seed: " + seed);
+
 		Generator gen = new Generator(size, rand);
 		gen.generate();
 	}
