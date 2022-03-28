@@ -1,21 +1,22 @@
-import java.lang.reflect.AnnotatedArrayType;
 import java.util.*;
 
 public class Generator {
 
-	public static final double CONSTRAINT_PERCENTAGE = 0.3;
-	public static final double FACT_PERCENTAGE = 0.3;
 
-	public static final double PREDICATE_TO_SIZE_RATIO = 0.1;
-	public static final double VARIABLE_TO_SIZE_RATIO = 0.1;
-	public static final double CONSTANT_TO_SIZE_RATIO = 0.1;
-	public static final double FUNCTOR_TO_SIZE_RATIO = 0.05;
+	public static final double RULES_WITH_NEGATIVE_BODY_RATIO = 0.5;
+	public static final double CONSTRAINT_TO_RULES_RATIO = 0.5;
+
 
 	public static final int MAX_PREDICATE_ARITY = 3;
-	public static final boolean INCLUDE_FUNCTIONS = true;
+	public static final boolean INCLUDE_FUNCTIONS = false;
 
 	private final int size;
 	private final Random rand;
+	private final double FACTS_TO_RULES_RATIO;
+	public final int PREDICATE_AMOUNT;
+	public final int VARIABLE_AMOUNT;
+	public final int CONSTANT_AMOUNT;
+	public final int FUNCTOR_AMOUNT;
 	private final List<Predicate> predicates = new LinkedList<>();
 	private final List<Variable> variables = new LinkedList<>();
 	private final List<Constant> constants = new LinkedList<>();
@@ -24,6 +25,11 @@ public class Generator {
 	public Generator(int size, Random rand) {
 		this.size = size;
 		this.rand = rand;
+		this.FACTS_TO_RULES_RATIO = (size - Math.sqrt(size)) / size;
+		this.PREDICATE_AMOUNT = (int) (0.5 * Math.sqrt(size)) + 1;
+		this.VARIABLE_AMOUNT = (int) (0.5 * Math.sqrt(size)) + 1;
+		this.CONSTANT_AMOUNT = (int) (0.5 * Math.sqrt(size)) + 1;
+		this.FUNCTOR_AMOUNT = (int) (0.5 * Math.sqrt(size)) + 1;
 	}
 
 	public void generate() {
@@ -33,11 +39,11 @@ public class Generator {
 
 		for (int i = 0; i < size; i++) {
 			double type = rand.nextDouble();
-			if (type < CONSTRAINT_PERCENTAGE) {
-				rule = generateConstraint();
-			}
-			else if (type < CONSTRAINT_PERCENTAGE + FACT_PERCENTAGE) {
+			if (type < FACTS_TO_RULES_RATIO) {
 				rule = generateFact();
+			}
+			else if (rand.nextDouble() < CONSTRAINT_TO_RULES_RATIO) {
+				rule = generateConstraint();
 			}
 			else {
 				rule = generateRule();
@@ -47,16 +53,16 @@ public class Generator {
 	}
 
 	private void initialize() {
-		for (int i = 0; i <= VARIABLE_TO_SIZE_RATIO * size; i++) {
+		for (int i = 0; i <= VARIABLE_AMOUNT; i++) {
 			variables.add(new Variable(i));
 		}
-		for (int i = 0; i <= CONSTANT_TO_SIZE_RATIO * size; i++) {
+		for (int i = 0; i <= CONSTANT_AMOUNT; i++) {
 			constants.add(new Constant(i));
 		}
-		for (int i = 0; i <= FUNCTOR_TO_SIZE_RATIO * size; i++) {
+		for (int i = 0; i <= FUNCTOR_AMOUNT; i++) {
 			functors.add(new Functor(i));
 		}
-		for (int i = 0; i <= PREDICATE_TO_SIZE_RATIO * size; i++) {
+		for (int i = 0; i <= PREDICATE_AMOUNT; i++) {
 			predicates.add(new Predicate(i, rand.nextInt(MAX_PREDICATE_ARITY + 1)));
 		}
 	}
@@ -125,11 +131,13 @@ public class Generator {
 		}
 		Atom bodyAtom;
 
-		int negBodyLength = rand.nextInt(3);
-		for(int i = 0; i < negBodyLength; i++) {
-			bodyAtom = generateAtom();
-			negBody.add(bodyAtom);
-			neededVariables.addAll(bodyAtom.getOccurringVariables());
+		if (rand.nextDouble() < RULES_WITH_NEGATIVE_BODY_RATIO) {
+			int negBodyLength = rand.nextInt(2) + 1;
+			for(int i = 0; i < negBodyLength; i++) {
+				bodyAtom = generateAtom();
+				negBody.add(bodyAtom);
+				neededVariables.addAll(bodyAtom.getOccurringVariables());
+			}
 		}
 
 		List<Atom> posBody;
@@ -180,7 +188,7 @@ public class Generator {
 			default -> null;
 		};
 	}
-
+	/*
 	public Term generateTerm(Variable neededVariable) {
 		return switch (rand.nextInt(1 + (INCLUDE_FUNCTIONS ? 1 : 0))) {
 			case 0 -> new Term(neededVariable);
@@ -188,5 +196,5 @@ public class Generator {
 					neededVariable);
 			default -> null;
 		};
-	}
+	} */
 }
