@@ -8,15 +8,19 @@ public class Predicate {
 		this.arity = arity;
 	}
 
-	public Predicate(int inputSeed) {
-		this.identifier = "p" + inputSeed;
-	}
-
 	public String getIdentifier() {
 		return identifier;
 	}
 
 	public int getArity() {
 		return arity;
+	}
+
+	@Override
+	public String toString() {
+		return "Predicate{" +
+				"identifier='" + identifier + '\'' +
+				", arity=" + arity +
+				'}';
 	}
 }

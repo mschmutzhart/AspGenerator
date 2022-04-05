@@ -3,11 +3,15 @@ import java.util.*;
 public class Generator {
 
 
-	public static final double RULES_WITH_NEGATIVE_BODY_RATIO = 0.5;
-	public static final double CONSTRAINT_TO_RULES_RATIO = 0.5;
+	public static final double RULES_WITH_POSSIBLE_NEGATIVE_BODY_RATIO = 0.5;
+	public static final double CONSTRAINT_TO_RULES_RATIO = 0.1;
 
 
 	public static final int MAX_PREDICATE_ARITY = 3;
+
+	//The next constant defines how much more likely a predicate with
+	// arity n+1 is chosen over one with arity n.
+	public static final int ARITY_PROBABILITY_BASE = 5;
 	public static final boolean INCLUDE_FUNCTIONS = false;
 
 	private final int size;
@@ -26,15 +30,19 @@ public class Generator {
 		this.size = size;
 		this.rand = rand;
 		this.FACTS_TO_RULES_RATIO = (size - Math.sqrt(size)) / size;
-		this.PREDICATE_AMOUNT = (int) (0.5 * Math.sqrt(size)) + 1;
-		this.VARIABLE_AMOUNT = (int) (0.5 * Math.sqrt(size)) + 1;
-		this.CONSTANT_AMOUNT = (int) (0.5 * Math.sqrt(size)) + 1;
-		this.FUNCTOR_AMOUNT = (int) (0.5 * Math.sqrt(size)) + 1;
+		this.PREDICATE_AMOUNT = (int) (Math.sqrt(size)) + 1;
+		this.VARIABLE_AMOUNT = (int) (Math.sqrt(size)) + 1;
+		this.CONSTANT_AMOUNT = (int) (Math.sqrt(size)) + 1;
+		this.FUNCTOR_AMOUNT = (int) (Math.sqrt(size)) + 1;
 	}
 
 	public void generate() {
-		this.initialize();
+		System.out.println("%RULES_WITH_POSSIBLE_NEGATIVE_BODY_RATIO: " + RULES_WITH_POSSIBLE_NEGATIVE_BODY_RATIO + "\n" +
+				"%CONSTRAINT_TO_RULES_RATIO: " + CONSTRAINT_TO_RULES_RATIO +  "\n" +
+				"%MAX_PREDICATE_ARITY: " + MAX_PREDICATE_ARITY + "\n" +
+				"%ARITY_PROBABILITY_BASE: " + ARITY_PROBABILITY_BASE);
 
+		this.initialize();
 		AspRule rule;
 
 		for (int i = 0; i < size; i++) {
@@ -63,7 +71,13 @@ public class Generator {
 			functors.add(new Functor(i));
 		}
 		for (int i = 0; i <= PREDICATE_AMOUNT; i++) {
-			predicates.add(new Predicate(i, rand.nextInt(MAX_PREDICATE_ARITY + 1)));
+			int x = rand.nextInt((int) Math.pow(ARITY_PROBABILITY_BASE, MAX_PREDICATE_ARITY));
+			for (int j = 0; j <= MAX_PREDICATE_ARITY; j++) {
+				if (x <= (Math.pow(ARITY_PROBABILITY_BASE, j))) {
+					predicates.add(new Predicate(i, j));
+					break;
+				}
+			}
 		}
 	}
 
@@ -131,7 +145,7 @@ public class Generator {
 		}
 		Atom bodyAtom;
 
-		if (rand.nextDouble() < RULES_WITH_NEGATIVE_BODY_RATIO) {
+		if (rand.nextDouble() < RULES_WITH_POSSIBLE_NEGATIVE_BODY_RATIO) {
 			int negBodyLength = rand.nextInt(2) + 1;
 			for(int i = 0; i < negBodyLength; i++) {
 				bodyAtom = generateAtom();
